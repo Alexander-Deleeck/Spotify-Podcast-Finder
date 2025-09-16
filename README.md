@@ -50,8 +50,14 @@ The most common actions are:
 
 ```bash
 python main.py add-query "Michael Levin" --frequency weekly \
-  --exclude-show "The Michael Levine Show" \
-  --exclude-title "bonus"
+  --exclude-show "Big Think" \
+  --exclude-title "Levine"
+  --exclude-title "Levy"
+  --exclude-title "Mark Levin"
+  --exclude-title "John Levi"
+  --exclude-title "Levinson"
+  --exclude-title "Janna Levin"
+  --exclude-title "Michael Lewis"
 ```
 
 ### 2. List Saved Queries

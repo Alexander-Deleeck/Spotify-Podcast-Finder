@@ -3,12 +3,15 @@ from __future__ import annotations
 
 import os
 import time
-from typing import Dict, Generator, Optional
-
+from typing import Dict, Generator, Iterable, List, Optional
+from dotenv import load_dotenv
 import requests
+
+load_dotenv()
 
 TOKEN_URL = "https://accounts.spotify.com/api/token"
 SEARCH_URL = "https://api.spotify.com/v1/search"
+EPISODES_URL = "https://api.spotify.com/v1/episodes"
 
 
 class SpotifyAuthError(RuntimeError):
@@ -139,18 +142,78 @@ class SpotifyClient:
             if max_pages is not None and pages_retrieved >= max_pages:
                 break
 
+    def get_episodes(self, episode_ids: Iterable[str], *, market: Optional[str] = None) -> List[Dict]:
+        """Return full episode objects for the provided IDs using the batch endpoint.
+
+        Spotify supports up to 50 IDs per request at /v1/episodes.
+        """
+        ids = [eid for eid in (str(x).strip() for x in episode_ids) if eid]
+        if not ids:
+            return []
+
+        results: List[Dict] = []
+        token = self._ensure_token()
+
+        for start in range(0, len(ids), 50):
+            chunk = ids[start : start + 50]
+            params = {"ids": ",".join(chunk)}
+            if market:
+                params["market"] = market
+            response = self.session.get(
+                EPISODES_URL,
+                headers={"Authorization": f"Bearer {token}"},
+                params=params,
+                timeout=20,
+            )
+            if response.status_code == 401:
+                self._request_token()
+                token = self._ensure_token()
+                response = self.session.get(
+                    EPISODES_URL,
+                    headers={"Authorization": f"Bearer {token}"},
+                    params=params,
+                    timeout=20,
+                )
+            if response.status_code == 429:
+                retry_after = int(response.headers.get("Retry-After", "1"))
+                time.sleep(retry_after)
+                # retry once after sleeping
+                response = self.session.get(
+                    EPISODES_URL,
+                    headers={"Authorization": f"Bearer {token}"},
+                    params=params,
+                    timeout=20,
+                )
+
+            if response.status_code != 200:
+                raise SpotifyAPIError(
+                    f"Spotify API returned status {response.status_code} for episodes: {response.text}"
+                )
+
+            payload = response.json() or {}
+            batch = payload.get("episodes") or []
+            # API can include nulls for unavailable episodes
+            results.extend([item for item in batch if item])
+
+        return results
+
     def close(self) -> None:
         self.session.close()
 
 
 def extract_episode_metadata(raw_episode: Dict) -> Dict:
-    """Return a subset of useful metadata from a Spotify episode payload."""
+    """Return a subset of useful metadata from a Spotify episode payload.
+
+    Works with both SimplifiedEpisodeObject (from search) and full EpisodeObject
+    (from episodes endpoint). Not all fields are guaranteed in the simplified
+    object; in particular, `show` may be omitted.
+    """
     show = raw_episode.get("show") or {}
     external_urls = raw_episode.get("external_urls") or {}
     return {
         "episode_id": raw_episode.get("id"),
         "name": raw_episode.get("name"),
-        "show_name": show.get("name"),
+        "show_name": show.get("name") or "",
         "release_date": raw_episode.get("release_date"),
         "description": raw_episode.get("description"),
         "external_url": external_urls.get("spotify"),

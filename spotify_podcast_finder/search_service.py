@@ -218,17 +218,34 @@ def run_search(
     skipped = 0
     new_episodes: List[Episode] = []
 
+    # First pass: collect episode IDs from the search results
+    candidate_ids: List[str] = []
+    simplified_items: List[dict] = []
     for raw_episode in spotify_client.search_episodes(
         query.term,
         market=market,
         limit=limit,
         max_pages=max_pages,
     ):
-        metadata = extract_episode_metadata(raw_episode)
+        simplified_items.append(raw_episode)
+        episode_id = raw_episode.get("id")
+        if episode_id:
+            candidate_ids.append(episode_id)
+
+    # Fetch full episode details in batch to ensure show info is populated
+    full_items_by_id = {item.get("id"): item for item in spotify_client.get_episodes(candidate_ids, market=market)}
+
+    for raw_episode in simplified_items:
+        # Prefer full item when available, fallback to simplified
+        episode_id = raw_episode.get("id")
+        full_item = full_items_by_id.get(episode_id) if episode_id else None
+        source = full_item or raw_episode
+        metadata = extract_episode_metadata(source)
         episode_id = metadata.get("episode_id")
         if not episode_id:
             continue
 
+        # Ensure we never insert NULL into NOT NULL columns (name, show_name)
         show_name = metadata.get("show_name") or ""
         episode_title = metadata.get("name") or ""
         show_lower = show_name.lower()
@@ -263,8 +280,8 @@ def run_search(
                 WHERE id = ?
                 """,
                 (
-                    metadata.get("name"),
-                    metadata.get("show_name"),
+                    episode_title,
+                    show_name,
                     metadata.get("release_date"),
                     metadata.get("description"),
                     metadata.get("external_url"),
@@ -296,8 +313,8 @@ def run_search(
                 (
                     query.id,
                     metadata.get("episode_id"),
-                    metadata.get("name"),
-                    metadata.get("show_name"),
+                    episode_title,
+                    show_name,
                     metadata.get("release_date"),
                     metadata.get("description"),
                     metadata.get("external_url"),
@@ -310,8 +327,8 @@ def run_search(
             )
             new_episode = Episode(
                 episode_id=metadata.get("episode_id"),
-                name=metadata.get("name"),
-                show_name=metadata.get("show_name"),
+                name=episode_title,
+                show_name=show_name,
                 release_date=metadata.get("release_date"),
                 description=metadata.get("description"),
                 external_url=metadata.get("external_url"),
