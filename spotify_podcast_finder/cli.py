@@ -96,13 +96,25 @@ def build_parser() -> argparse.ArgumentParser:
     add_parser = subparsers.add_parser("add-query", help="Create a new Spotify search query")
     add_parser.add_argument("term", help="Search term to look for, e.g. the guest name")
     add_parser.add_argument("--frequency", default="weekly", help="How often the search should run (e.g. weekly, 14d)")
-    add_parser.add_argument("--exclude-show", action="append", dest="exclude_shows", default=[], help="Show name to exclude")
+    add_parser.add_argument(
+        "--exclude-show",
+        action="append",
+        dest="exclude_shows",
+        default=[],
+        help=(
+            "Exclude shows by name. Supports glob wildcards (* ? []) and regex when wrapped in /.../. "
+            "Examples: 'The * Show', '/^Joe Rogan.*$/'"
+        ),
+    )
     add_parser.add_argument(
         "--exclude-title",
         action="append",
         dest="exclude_titles",
         default=[],
-        help="Ignore episodes containing this keyword in the title",
+        help=(
+            "Exclude episodes by title. Plain text is substring match; supports glob wildcards (* ? []) "
+            "and regex when wrapped in /.../. Examples: '*bonus*', '/\\bRecap\\b/i'"
+        ),
     )
 
     subparsers.add_parser("list-queries", help="List all stored search queries")
@@ -111,8 +123,18 @@ def build_parser() -> argparse.ArgumentParser:
     update_parser.add_argument("query_id", type=int)
     update_parser.add_argument("--term")
     update_parser.add_argument("--frequency")
-    update_parser.add_argument("--exclude-show", action="append", dest="exclude_shows")
-    update_parser.add_argument("--exclude-title", action="append", dest="exclude_titles")
+    update_parser.add_argument(
+        "--exclude-show",
+        action="append",
+        dest="exclude_shows",
+        help="Same pattern rules as for --exclude-show on add-query",
+    )
+    update_parser.add_argument(
+        "--exclude-title",
+        action="append",
+        dest="exclude_titles",
+        help="Same pattern rules as for --exclude-title on add-query",
+    )
 
     delete_parser = subparsers.add_parser("delete-query", help="Remove a search query")
     delete_parser.add_argument("query_id", type=int)

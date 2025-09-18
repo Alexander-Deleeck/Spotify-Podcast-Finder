@@ -16,6 +16,10 @@ class SearchQuery:
     frequency: str
     exclude_shows: List[str]
     exclude_title_keywords: List[str]
+    exclude_description_keywords: List[str]
+    include_shows: List[str]
+    include_title_keywords: List[str]
+    include_description_keywords: List[str]
     created_at: datetime
     updated_at: datetime
     last_run: Optional[datetime]

@@ -44,6 +44,10 @@ def initialize_db(connection: sqlite3.Connection) -> None:
             frequency TEXT NOT NULL,
             exclude_shows TEXT NOT NULL DEFAULT '[]',
             exclude_title_keywords TEXT NOT NULL DEFAULT '[]',
+            exclude_description_keywords TEXT NOT NULL DEFAULT '[]',
+            include_shows TEXT NOT NULL DEFAULT '[]',
+            include_title_keywords TEXT NOT NULL DEFAULT '[]',
+            include_description_keywords TEXT NOT NULL DEFAULT '[]',
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             last_run TEXT
@@ -78,6 +82,39 @@ def initialize_db(connection: sqlite3.Connection) -> None:
         """
     )
     connection.commit()
+
+    # Backfill columns for existing installations (SQLite prior to new columns)
+    # We use ALTER TABLE ADD COLUMN guarded by a simple existence check.
+    def _has_column(table: str, column: str) -> bool:
+        info = connection.execute(f"PRAGMA table_info({table})").fetchall()
+        return any(row[1] == column for row in info)
+
+    alter_statements = []
+    if not _has_column("search_queries", "exclude_description_keywords"):
+        alter_statements.append(
+            "ALTER TABLE search_queries ADD COLUMN exclude_description_keywords TEXT NOT NULL DEFAULT '[]'"
+        )
+    if not _has_column("search_queries", "include_shows"):
+        alter_statements.append(
+            "ALTER TABLE search_queries ADD COLUMN include_shows TEXT NOT NULL DEFAULT '[]'"
+        )
+    if not _has_column("search_queries", "include_title_keywords"):
+        alter_statements.append(
+            "ALTER TABLE search_queries ADD COLUMN include_title_keywords TEXT NOT NULL DEFAULT '[]'"
+        )
+    if not _has_column("search_queries", "include_description_keywords"):
+        alter_statements.append(
+            "ALTER TABLE search_queries ADD COLUMN include_description_keywords TEXT NOT NULL DEFAULT '[]'"
+        )
+
+    for stmt in alter_statements:
+        try:
+            connection.execute(stmt)
+        except sqlite3.OperationalError:
+            # Ignore if the column already exists due to race or prior migration
+            pass
+    if alter_statements:
+        connection.commit()
 
 
 def utcnow_iso() -> str:
