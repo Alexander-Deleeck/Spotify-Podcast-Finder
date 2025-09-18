@@ -112,10 +112,30 @@ Start the app with:
 streamlit run streamlit_app.py
 ```
 
-The sidebar allows you to choose a custom SQLite database file (or fall back to
-the default `podcast_finder.db`) and reminds you to configure
-`SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` environment variables before
-running any searches.
+The Streamlit frontend has been refactored into a modular package under `frontend/`.
+The `streamlit_app.py` file now acts as a lightweight launcher that wires the
+modular pages together:
+
+- `frontend/pages/manage_queries.py` – create, edit, and delete search queries
+  with include/exclude pattern support.
+- `frontend/pages/run_searches.py` – run a single query or all due queries.
+- `frontend/pages/episodes.py` – browse stored episodes (includes description).
+- `frontend/pages/run_history.py` – inspect previous search runs.
+
+When the app starts:
+
+- Use the sidebar to set a custom database path or keep the default
+  `podcast_finder.db` in the project root.
+- Ensure the environment variables `SPOTIFY_CLIENT_ID` and
+  `SPOTIFY_CLIENT_SECRET` are set before running searches.
+
+Example (PowerShell on Windows):
+
+```powershell
+$env:SPOTIFY_CLIENT_ID="your-client-id"
+$env:SPOTIFY_CLIENT_SECRET="your-client-secret"
+streamlit run streamlit_app.py
+```
 
 ## Database
 
