@@ -198,7 +198,7 @@ def display_run_summary(query: SearchQuery, summary: dict) -> None:
             f"Found {len(new_episodes)} new episodes for **{markdown_escape(query.term)}**."
         )
         rows = episodes_to_table_rows(new_episodes)
-        st.dataframe(rows, hide_index=True, use_container_width=True)
+        st.dataframe(rows, hide_index=True, width="stretch")
     else:
         st.info(
             f"No new episodes found for **{markdown_escape(query.term)}**."
@@ -250,7 +250,7 @@ def render_manage_queries(connection: sqlite3.Connection) -> None:
                     "Exclude title keywords": ", ".join(query.exclude_title_keywords) or "—",
                 }
             )
-        st.dataframe(table_rows, hide_index=True, use_container_width=True)
+        st.dataframe(table_rows, hide_index=True, width="stretch")
     else:
         st.info("No search queries stored yet. Use the form below to create one.")
 
@@ -529,7 +529,7 @@ def render_episode_library(connection: sqlite3.Connection) -> None:
         st.caption(
             f"Showing {len(rows)} of {total} stored episodes for '{selected_query.term}'."
         )
-        st.dataframe(rows, hide_index=True, use_container_width=True)
+        st.dataframe(rows, hide_index=True, width="stretch")
     else:
         st.info(
             "No episodes indexed yet for this query. Run the search to populate results."
@@ -563,7 +563,7 @@ def render_run_history(connection: sqlite3.Connection) -> None:
                 "Processed": row["total_results"],
             }
         )
-    st.dataframe(table_rows, hide_index=True, use_container_width=True)
+    st.dataframe(table_rows, hide_index=True, width="stretch")
 
 
 # ---------------------------------------------------------------------------

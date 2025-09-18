@@ -25,7 +25,8 @@ def resolve_db_path(db_path: Optional[Union[str, Path]] = None) -> Path:
 def get_connection(db_path: Optional[Union[str, Path]] = None) -> sqlite3.Connection:
     """Return a SQLite connection and ensure foreign keys are enabled."""
     resolved_path = resolve_db_path(db_path)
-    connection = sqlite3.connect(resolved_path)
+    # Streamlit can execute callbacks on different threads; allow cross-thread use.
+    connection = sqlite3.connect(resolved_path, check_same_thread=False)
     connection.row_factory = sqlite3.Row
     # Enable cascading behaviour for related tables.
     connection.execute("PRAGMA foreign_keys = ON")
