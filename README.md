@@ -96,6 +96,27 @@ python main.py list-episodes 1 --limit 10 --order release
 python main.py recent-runs --limit 5
 ```
 
+## Streamlit Frontend
+
+A lightweight Streamlit frontend is included for users who prefer a visual
+interface. It exposes the same functionality as the CLI:
+
+- run all saved queries that are due or trigger an individual search on demand,
+- create, edit, and delete search queries together with exclusion filters,
+- review newly indexed episodes and browse all stored results, and
+- inspect the history of previous search runs.
+
+Start the app with:
+
+```bash
+streamlit run streamlit_app.py
+```
+
+The sidebar allows you to choose a custom SQLite database file (or fall back to
+the default `podcast_finder.db`) and reminds you to configure
+`SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` environment variables before
+running any searches.
+
 ## Database
 
 All data is stored inside `podcast_finder.db` in the project root by default.

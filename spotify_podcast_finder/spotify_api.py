@@ -142,6 +142,7 @@ class SpotifyClient:
             if max_pages is not None and pages_retrieved >= max_pages:
                 break
 
+
     def get_episodes(self, episode_ids: Iterable[str], *, market: Optional[str] = None) -> List[Dict]:
         """Return full episode objects for the provided IDs using the batch endpoint.
 

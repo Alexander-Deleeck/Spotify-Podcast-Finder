@@ -218,9 +218,11 @@ def run_search(
     skipped = 0
     new_episodes: List[Episode] = []
 
+
     # First pass: collect episode IDs from the search results
     candidate_ids: List[str] = []
     simplified_items: List[dict] = []
+    
     for raw_episode in spotify_client.search_episodes(
         query.term,
         market=market,
